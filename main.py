@@ -1,21 +1,24 @@
 import praw
 import datetime
 import time
+import configparser
 
 utc_now = datetime.datetime.utcnow()
 dt = time.mktime(utc_now.timetuple()) - 60*60*24*2
 
-def login():
-    r = praw.Reddit(app_ua)
-    r.set_oauth_app_info(app_id, app_secret, app_uri)
-    r.refresh_access_information(app_refresh)
-    return r
+config = configparser.ConfigParser()
+config.read('config.ini')
+config = config['main']
 
-reddit = praw.Reddit(client_id=app_id, client_secret=app_secret,
-                     password='chopsticks2016', user_agent=app_ua,
-                     username='Rubikwindow')
+reddit = praw.Reddit(
+        client_id = config['client_id'], 
+        client_secret = config['client_secret'], 
+        password = config['password'],
+        user_agent = config['user_agent'], 
+        username = config['username']
+        )
 
-n = list(reddit.subreddit('uwaterloo').submissions(start=dt)) ##this is a generator
+n = list(reddit.subreddit('uwaterloo').submissions(start=dt))
 
 for i in n:
 	submission = reddit.submission(id=n[i])
