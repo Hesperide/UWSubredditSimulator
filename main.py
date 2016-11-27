@@ -9,7 +9,8 @@ from html.parser import HTMLParser
 markovify_tries = 1000
 markovify_max_overlap_total=10
 markovify_max_overlap_ratio=0.5
-reddit_title_limit = 300
+title_char_limit = 300
+selftext_char_limit = 250
 
 class Markovifier(markovify.Text):
 
@@ -41,7 +42,7 @@ class Simulator:
                 )
 
     def get_from_time(self):
-        return time.mktime(datetime.datetime.utcnow().timetuple()) - 60*60*24*2
+        return time.mktime(datetime.datetime.utcnow().timetuple()) - 60*60*24*50
 
     def get_submissions(self, from_time = None):
         if not from_time:
@@ -80,11 +81,20 @@ class Simulator:
                 tries = markovify_tries,
                 max_overlap_total = markovify_max_overlap_total,
                 max_overlap_ratio = markovify_max_overlap_ratio,
-                char_limit = reddit_title_limit
+                char_limit = title_char_limit
                 )
 
-    #def post_submission(self):
-
+    def post_submission(self):
+        title = self.generate_title()
+        if random.random() < self.link_chance:
+            self.session.subreddit(self.config['target_subreddit']).submit(title, selftext = None, url = random.choice(self.urls))
+        else:
+            selftext = ""
+            while True:
+                selftext += self.generate_selftext_sentence() + ' '
+                if len(selftext) >= min(selftext_char_limit, self.average_selftext_length):
+                    break
+            self.session.subreddit(self.config['target_subreddit']).submit(title, selftext = selftext, url = None)
 
 '''
 submission = reddit.submission(id=n[0])
@@ -97,4 +107,5 @@ for top_level_comment in submission.comments:
 
 sim = Simulator()
 sim.train_on_submissions()
-print(sim.generate_title())
+for i in range(5):
+    sim.post_submission()
